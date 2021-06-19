@@ -95,15 +95,16 @@ class RenderThumbnails extends Maintenance {
 	 */
 	private function transformToSize( LocalFile $img, $width, $height ) {
 		$params = [ 'width' => $width, 'height' => $height ];
+		$this->output( "Attempting to render {$img->getName()} within {$width}x{$height}\n" );
 		$transformed = $img->transform( $params, File::RENDER_NOW );
 		if ( $transformed === false ) {
-			$this->error( "Unable to transform {$img->getName()}\n" );
+			$this->error( "    Unable to transform {$img->getName()}\n" );
 			return;
 		} elseif ( $transformed instanceof MediaTransformOutput && $transformed->isError() ) {
-			$this->error( "Unable to transform {$img->getName()} because:\n" . $transformed->getHtmlMsg() );
+			$this->error( "    Unable to transform {$img->getName()} because:\n    " . $transformed->getHtmlMsg() );
 			return;
 		}
-		$this->output( "{$img->getName()} rendered within {$width}x{$height} to {$img->getThumbPath()}\n" );
+		$this->output( "    Saved as {$img->getThumbPath()}\n" );
 	}
 }
 
