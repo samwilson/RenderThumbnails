@@ -98,8 +98,10 @@ class RenderThumbnails extends Maintenance {
 		$transformed = $img->transform( $params, File::RENDER_NOW );
 		if ( $transformed === false ) {
 			$this->error( "Unable to transform {$img->getName()}\n" );
+			return;
 		} elseif ( $transformed instanceof MediaTransformOutput && $transformed->isError() ) {
 			$this->error( "Unable to transform {$img->getName()} because:\n" . $transformed->getHtmlMsg() );
+			return;
 		}
 		$this->output( "{$img->getName()} rendered within {$width}x{$height} to {$img->getThumbPath()}\n" );
 	}
