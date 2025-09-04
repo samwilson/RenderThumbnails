@@ -1,6 +1,7 @@
 #!/usr/bin/env php
 <?php
 
+use MediaWiki\FileRepo\File\File;
 use MediaWiki\MediaWikiServices;
 
 $IP = getenv( 'MW_INSTALL_PATH' );
@@ -14,8 +15,11 @@ class RenderThumbnails extends Maintenance {
 	/** @var LocalRepo */
 	private $localRepo;
 
-	/** @var int[] Value of $wgThumbLimits */
+	/** @var int[][] Value of $wgImageLimits */
 	private $imageLimits;
+
+	/** @var int[] Value of $wgThumbLimits */
+	private $thumbLimits;
 
 	/** @var mixed[] Value of $wgGalleryOptions */
 	private $galleryOptions;
@@ -44,6 +48,7 @@ class RenderThumbnails extends Maintenance {
 		$services = MediaWikiServices::getInstance();
 		$this->localRepo = $services->getRepoGroup()->getLocalRepo();
 		$this->imageLimits = $services->getMainConfig()->get( 'ImageLimits' );
+		$this->thumbLimits = $services->getMainConfig()->get( 'ThumbLimits' );
 		$this->galleryOptions = $services->getMainConfig()->get( 'GalleryOptions' );
 
 		// Render specific files.
@@ -84,6 +89,10 @@ class RenderThumbnails extends Maintenance {
 		foreach ( $this->imageLimits as $imageLimit ) {
 			$this->transformToSize( $img, $imageLimit[0], $imageLimit[1] );
 		}
+		// All sizes from $wgThumbLimits.
+		foreach ( $this->thumbLimits as $thumbLimit ) {
+			$this->transformToSize( $img, $thumbLimit );
+		}
 		// Gallery sizes (including categories).
 		$this->transformToSize( $img, $this->galleryOptions['imageWidth'], $this->galleryOptions['imageHeight'] );
 	}
@@ -91,11 +100,16 @@ class RenderThumbnails extends Maintenance {
 	/**
 	 * @param LocalFile $img
 	 * @param int $width
-	 * @param int $height
+	 * @param int|null $height
 	 */
-	private function transformToSize( LocalFile $img, $width, $height ) {
-		$params = [ 'width' => $width, 'height' => $height ];
-		$this->output( "Attempting to render {$img->getName()} within {$width}x{$height}\n" );
+	private function transformToSize( LocalFile $img, int $width, ?int $height = null ): void {
+		$params = [ 'width' => $width ];
+		if ( $height ) {
+			$this->output( "Attempting to render {$img->getName()} within {$width}x{$height}\n" );
+			$params['height'] = $height;
+		} else {
+			$this->output( "Attempting to render {$img->getName()} to width {$width}\n" );
+		}
 		$transformed = $img->transform( $params, File::RENDER_NOW );
 		if ( $transformed === false ) {
 			$this->error( "    Unable to transform {$img->getName()}\n" );
